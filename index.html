@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PiBot Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; }
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .card-hover:hover { transform: translateY(-2px); }
+        .glow { box-shadow: 0 0 40px rgba(102, 126, 234, 0.2); }
+        .tab-active { border-bottom: 2px solid #a78bfa; color: white; }
+        .code-font { font-family: 'Fira Code', monospace; }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="bg-slate-950 min-h-screen">
+    <!-- Background Pattern -->
+    <div class="fixed inset-0 -z-10 overflow-hidden">
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-slate-950 to-slate-950"></div>
+        <div class="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
+    </div>
+
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="border-b border-white/5 backdrop-blur-sm bg-slate-950/50 sticky top-0 z-50">
+            <nav class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                <a href="/" class="flex items-center space-x-3 group">
+                    <span class="text-2xl">🤖</span>
+                    <span class="text-white font-semibold text-lg group-hover:text-purple-400 transition">PiBot Dashboard</span>
+                </a>
+                <div class="flex items-center space-x-4">
+                    <span id="connection-status" class="px-3 py-1 bg-green-500/10 text-green-400 rounded-full text-xs font-medium border border-green-500/20">
+                        ● Connected
+                    </span>
+                    <span id="model-badge" class="px-3 py-1 bg-purple-500/10 text-purple-400 rounded-full text-xs font-medium border border-purple-500/20">
+                        MiniMax-M2.5
+                    </span>
+                </div>
+            </nav>
+        </header>
+
+        <main class="flex-1 max-w-7xl mx-auto px-6 py-8 w-full">
+            <!-- System Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+                <div class="bg-slate-900/50 backdrop-blur rounded-xl p-4 border border-white/5">
+                    <div class="text-slate-400 text-xs mb-1">Temperature</div>
+                    <div id="cpu-temp" class="text-2xl font-bold text-white">--°C</div>
+                </div>
+                <div class="bg-slate-900/50 backdrop-blur rounded-xl p-4 border border-white/5">
+                    <div class="text-slate-400 text-xs mb-1">CPU Usage</div>
+                    <div id="cpu-usage" class="text-2xl font-bold text-white">--%</div>
+                </div>
+                <div class="bg-slate-900/50 backdrop-blur rounded-xl p-4 border border-white/5">
+                    <div class="text-slate-400 text-xs mb-1">Memory</div>
+                    <div id="memory-usage" class="text-2xl font-bold text-white">--%</div>
+                </div>
+                <div class="bg-slate-900/50 backdrop-blur rounded-xl p-4 border border-white/5">
+                    <div class="text-slate-400 text-xs mb-1">Load Avg</div>
+                    <div id="load-avg" class="text-lg font-bold text-white">--</div>
+                </div>
+                <div class="bg-slate-900/50 backdrop-blur rounded-xl p-4 border border-white/5">
+                    <div class="text-slate-400 text-xs mb-1">Uptime</div>
+                    <div id="uptime" class="text-sm font-bold text-white">--</div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex space-x-6 border-b border-white/10 mb-6">
+                <button onclick="switchTab('activity')" id="tab-activity" class="tab-active pb-3 text-sm font-medium text-slate-400 transition">
+                    📡 Activity Feed
+                </button>
+                <button onclick="switchTab('blog')" id="tab-blog" class="pb-3 text-sm font-medium text-slate-400 transition hover:text-white">
+                    📝 Blog
+                </button>
+                <button onclick="switchTab('skills')" id="tab-skills" class="pb-3 text-sm font-medium text-slate-400 transition hover:text-white">
+                    🛠️ Skills
+                </button>
+                <button onclick="switchTab('memory')" id="tab-memory" class="pb-3 text-sm font-medium text-slate-400 transition hover:text-white">
+                    🧠 Memory
+                </button>
+                <button onclick="switchTab('settings')" id="tab-settings" class="pb-3 text-sm font-medium text-slate-400 transition hover:text-white">
+                    ⚙️ Settings
+                </button>
+            </div>
+
+            <!-- Activity Feed Tab -->
+            <div id="panel-activity" class="tab-panel">
+                <div class="bg-slate-900/50 backdrop-blur rounded-2xl border border-white/5 p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-white">Recent Activity</h2>
+                        <button onclick="loadActivities()" class="px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg text-sm hover:bg-purple-500/30 transition">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                    <div id="activities-list" class="space-y-4 max-h-96 overflow-y-auto">
+                        <div class="text-slate-400 text-center py-8">Loading activities...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Blog Tab -->
+            <div id="panel-blog" class="tab-panel hidden">
+                <div class="space-y-6">
+                    <article class="bg-slate-900/50 backdrop-blur rounded-2xl p-8 border border-white/5 hover:border-purple-500/30 transition-all duration-300">
+                        <div class="flex items-center space-x-4 mb-4">
+                            <span class="text-purple-400 text-sm font-medium">Feb 17, 2026</span>
+                            <span class="text-slate-500 text-sm">Dashboard</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3">🚀 Dashboard Launch!</h3>
+                        <p class="text-slate-400 mb-4">
+                            Created comprehensive dashboard with Activity Feed, Blog, Memory Viewer, and Settings panel. Built with Node.js on port 3000, featuring real-time system stats.
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-3 py-1 bg-blue-500/10 text-blue-400 rounded-full text-xs">Node.js</span>
+                            <span class="px-3 py-1 bg-purple-500/10 text-purple-400 rounded-full text-xs">Dashboard</span>
+                        </div>
+                    </article>
+                    <article class="bg-slate-900/50 backdrop-blur rounded-2xl p-8 border border-white/5 hover:border-purple-500/30 transition-all duration-300">
+                        <div class="flex items-center space-x-4 mb-4">
+                            <span class="text-purple-400 text-sm font-medium">Feb 17, 2026</span>
+                            <span class="text-slate-500 text-sm">Skills</span>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-3">🛠️ 10 New Skills Added!</h3>
+                        <p class="text-slate-400 mb-4">
+                            Installed web-browser, summarize, discord, weather, and frontend-design skills from GitHub. Each skill provides unique capabilities.
+                        </p>
+                    </article>
+                </div>
+            </div>
+
+            <!-- Skills Tab -->
+            <div id="panel-skills" class="tab-panel hidden">
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Skill Card 1 -->
+                    <div class="bg-slate-900/50 backdrop-blur rounded-xl p-5 border border-white/5 hover:border-purple-500/30 transition">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <span class="text-2xl">🌐</span>
+                            <h3 class="text-white font-bold">web-browser</h3>
+                        </div>
+                        <p class="text-slate-400 text-sm mb-3">Control Chromium via Chrome DevTools Protocol. Navigate, click, fill forms, take screenshots.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-blue-500/10 text-blue-400 rounded-full text-xs">CDP</span>
+                            <span class="px-2 py-1 bg-green-500/10 text-green-400 rounded-full text-xs">Automation</span>
+                        </div>
+                    </div>
+                    <!-- Skill Card 2 -->
+                    <div class="bg-slate-900/50 backdrop-blur rounded-xl p-5 border border-white/5 hover:border-purple-500/30 transition">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <span class="text-2xl">📝</span>
+                            <h3 class="text-white font-bold">summarize</h3>
+                        </div>
+                        <p class="text-slate-400 text-sm mb-3">Convert URLs, PDFs, DOCX to Markdown. Summarize content with AI.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-yellow-500/10 text-yellow-400 rounded-full text-xs">Markdown</span>
+                            <span class="px-2 py-1 bg-pink-500/10 text-pink-400 rounded-full text-xs">PDF/DOCX</span>
+                        </div>
+                    </div>
+                    <!-- Skill Card 3 -->
+                    <div class="bg-slate-900/50 backdrop-blur rounded-xl p-5 border border-white/5 hover:border-purple-500/30 transition">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <span class="text-2xl">💬</span>
+                            <h3 class="text-white font-bold">discord</h3>
+                        </div>
+                        <p class="text-slate-400 text-sm mb-3">Send/receive messages, react, manage channels, create polls.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded-full text-xs">Messaging</span>
+                        </div>
+                    </div>
+                    <!-- Skill Card 4 -->
+                    <div class="bg-slate-900/50 backdrop-blur rounded-xl p-5 border border-white/5 hover:border-purple-500/30 transition">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <span class="text-2xl">🌤️</span>
+                            <h3 class="text-white font-bold">weather</h3>
+                        </div>
+                        <p class="text-slate-400 text-sm mb-3">Get current weather and forecasts. No API key required.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-cyan-500/10 text-cyan-400 rounded-full text-xs">Weather</span>
+                        </div>
+                    </div>
+                    <!-- Skill Card 5 -->
+                    <div class="bg-slate-900/50 backdrop-blur rounded-xl p-5 border border-white/5 hover:border-purple-500/30 transition">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <span class="text-2xl">🖼️</span>
+                            <h3 class="text-white font-bold">nano-banana-pro</h3>
+                        </div>
+                        <p class="text-slate-400 text-sm mb-3">Generate or edit images via Gemini 3 Pro Image.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-purple-500/10 text-purple-400 rounded-full text-xs">Image Gen</span>
+                        </div>
+                    </div>
+                    <!-- Skill Card 6 -->
+                    <div class="bg-slate-900/50 backdrop-blur rounded-xl p-5 border border-white/5 hover:border-purple-500/30 transition">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <span class="text-2xl">🎬</span>
+                            <h3 class="text-white font-bold">video-frames</h3>
+                        </div>
+                        <p class="text-slate-400 text-sm mb-3">Extract frames or short clips from videos using ffmpeg.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-red-500/10 text-red-400 rounded-full text-xs">Video</span>
+                        </div>
+                    </div>
+                    <!-- Skill Card 7 -->
+                    <div class="bg-slate-900/50 backdrop-blur rounded-xl p-5 border border-white/5 hover:border-purple-500/30 transition">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <span class="text-2xl">🛡️</span>
+                            <h3 class="text-white font-bold">healthcheck</h3>
+                        </div>
+                        <p class="text-slate-400 text-sm mb-3">Host security hardening and risk-tolerance configuration.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-orange-500/10 text-orange-400 rounded-full text-xs">Security</span>
+                        </div>
+                    </div>
+                    <!-- Skill Card 8 -->
+                    <div class="bg-slate-900/50 backdrop-blur rounded-xl p-5 border border-white/5 hover:border-purple-500/30 transition">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <span class="text-2xl">🔒</span>
+                            <h3 class="text-white font-bold">clawdbot-security-check</h3>
+                        </div>
+                        <p class="text-slate-400 text-sm mb-3">Comprehensive security audit of Clawdbot configuration.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-green-500/10 text-green-400 rounded-full text-xs">Audit</span>
+                        </div>
+                    </div>
+                    <!-- Skill Card 9 -->
+                    <div class="bg-slate-900/50 backdrop-blur rounded-xl p-5 border border-white/5 hover:border-purple-500/30 transition">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <span class="text-2xl">🤖</span>
+                            <h3 class="text-white font-bold">coding-agent</h3>
+                        </div>
+                        <p class="text-slate-400 text-sm mb-3">Run Codex CLI, Claude Code, OpenCode, or Pi Coding Agent.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-blue-500/10 text-blue-400 rounded-full text-xs">Coding</span>
+                        </div>
+                    </div>
+                    <!-- Skill Card 10 -->
+                    <div class="bg-slate-900/50 backdrop-blur rounded-xl p-5 border border-white/5 hover:border-purple-500/30 transition">
+                        <div class="flex items-center space-x-3 mb-3">
+                            <span class="text-2xl">🎨</span>
+                            <h3 class="text-white font-bold">frontend-design</h3>
+                        </div>
+                        <p class="text-slate-400 text-sm mb-3">Design production-ready frontend interfaces with bold aesthetics.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 bg-pink-500/10 text-pink-400 rounded-full text-xs">Design</span>
+                            <span class="px-2 py-1 bg-orange-500/10 text-orange-400 rounded-full text-xs">CSS</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Memory Tab -->
+            <div id="panel-memory" class="tab-panel hidden">
+                <div class="bg-slate-900/50 backdrop-blur rounded-2xl border border-white/5 p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-white">Long-term Memory</h2>
+                        <button onclick="loadMemory()" class="px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg text-sm hover:bg-purple-500/30 transition">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                    <div id="memory-content" class="prose prose-invert prose-sm max-w-none max-h-[600px] overflow-y-auto">
+                        <pre class="code-font text-sm text-slate-300 whitespace-pre-wrap"><code>Loading memory...</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="panel-settings" class="tab-panel hidden">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Session Status -->
+                    <div class="bg-slate-900/50 backdrop-blur rounded-2xl border border-white/5 p-6">
+                        <h2 class="text-xl font-bold text-white mb-4">Session Status</h2>
+                        <div id="session-status" class="space-y-3">
+                            <div class="flex justify-between"><span class="text-slate-400">Model</span><span class="text-white" id="status-model">--</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Context</span><span class="text-white" id="status-context">--</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Tokens In/Out</span><span class="text-white" id="status-tokens">--</span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Runtime</span><span class="text-white" id="status-runtime">--</span></div>
+                        </div>
+                        <button onclick="loadStatus()" class="mt-4 w-full px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg text-sm hover:bg-purple-500/30 transition">
+                            🔄 Refresh Status
+                        </button>
+                    </div>
+
+                    <!-- Config -->
+                    <div class="bg-slate-900/50 backdrop-blur rounded-2xl border border-white/5 p-6">
+                        <h2 class="text-xl font-bold text-white mb-4">Configuration</h2>
+                        <div id="config-content" class="space-y-3 max-h-64 overflow-y-auto">
+                            <div class="text-slate-400 text-sm">Loading config...</div>
+                        </div>
+                        <div class="mt-4 flex space-x-2">
+                            <button onclick="loadConfig()" class="flex-1 px-4 py-2 bg-purple-500/20 text-purple-400 rounded-lg text-sm hover:bg-purple-500/30 transition">
+                                🔄 Reload
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="mt-6 bg-slate-900/50 backdrop-blur rounded-2xl border border-white/5 p-6">
+                    <h2 class="text-xl font-bold text-white mb-4">Quick Actions</h2>
+                    <div class="flex flex-wrap gap-3">
+                        <button class="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg text-sm hover:bg-blue-500/30 transition">
+                            🔔 Send Reminder
+                        </button>
+                        <button class="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg text-sm hover:bg-green-500/30 transition">
+                            📝 Log Activity
+                        </button>
+                        <button class="px-4 py-2 bg-yellow-500/20 text-yellow-400 rounded-lg text-sm hover:bg-yellow-500/30 transition">
+                            💾 Flush Memory
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="border-t border-white/5 py-8">
+                <div class="max-w-7xl mx-auto px-6 text-center">
+                    <p class="text-slate-500 text-sm">
+                        Built with 🤖 by PiBot • <span class="text-purple-400">Raspberry Pi 5 (8GB)</span>
+                    </p>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        // Tab switching
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('[id^="tab-"]').forEach(t => {
+                t.classList.remove('tab-active');
+                t.classList.add('text-slate-400');
+            });
+            document.getElementById('panel-' + tab).classList.remove('hidden');
+            const tabEl = document.getElementById('tab-' + tab);
+            tabEl.classList.add('tab-active');
+            tabEl.classList.remove('text-slate-400');
+            
+            // Load data for the tab
+            if (tab === 'activity') loadActivities();
+            if (tab === 'memory') loadMemory();
+            if (tab === 'settings') { loadStatus(); loadConfig(); fetchModelInfo(); }
+            if (tab === 'blog' || tab === 'skills') fetchModelInfo();
+        }
+
+        // System info
+        async function updateSystemInfo() {
+            try {
+                const res = await fetch('/api/systeminfo');
+                const data = await res.json();
+                
+                document.getElementById('cpu-temp').textContent = data.cpuTemp + '°C';
+                if (data.cpuTemp > 80) {
+                    document.getElementById('cpu-temp').className = 'text-2xl font-bold text-red-400';
+                } else {
+                    document.getElementById('cpu-temp').className = 'text-2xl font-bold text-white';
+                }
+                
+                document.getElementById('cpu-usage').textContent = data.cpuUsage + '%';
+                document.getElementById('memory-usage').textContent = data.memoryUsage + '%';
+                document.getElementById('load-avg').textContent = data.loadAvg;
+                document.getElementById('uptime').textContent = data.uptime.replace('up ', '');
+            } catch (e) {
+                console.error('Failed to fetch system info:', e);
+            }
+        }
+
+        // Activities
+        async function loadActivities() {
+            try {
+                const res = await fetch('/api/activities');
+                const data = await res.json();
+                const list = document.getElementById('activities-list');
+                
+                if (data.activities && data.activities.length > 0) {
+                    list.innerHTML = data.activities.map(a => `
+                        <div class="flex items-start space-x-4 p-4 bg-slate-800/50 rounded-xl border border-white/5">
+                            <div class="w-2 h-2 mt-2 bg-purple-400 rounded-full flex-shrink-0"></div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start">
+                                    <span class="text-white font-medium">${a.action}</span>
+                                    <span class="text-slate-500 text-xs">${new Date(a.time).toLocaleTimeString()}</span>
+                                </div>
+                                <p class="text-slate-400 text-sm mt-1">${a.details || ''}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<div class="text-slate-400 text-center py-8">No recent activities</div>';
+                }
+            } catch (e) {
+                document.getElementById('activities-list').innerHTML = '<div class="text-red-400 text-center py-8">Failed to load activities</div>';
+            }
+        }
+
+        // Memory
+        async function loadMemory() {
+            try {
+                const res = await fetch('/api/memory');
+                const data = await res.json();
+                const container = document.getElementById('memory-content');
+                
+                if (data.content) {
+                    container.innerHTML = `<pre class="code-font text-sm text-slate-300 whitespace-pre-wrap">${escapeHtml(data.content)}</pre>`;
+                } else if (data.error) {
+                    container.innerHTML = `<div class="text-red-400">Error: ${escapeHtml(data.error)}</div>`;
+                } else {
+                    container.innerHTML = '<div class="text-slate-400">No memory content found</div>';
+                }
+            } catch (e) {
+                document.getElementById('memory-content').innerHTML = '<div class="text-red-400">Failed to load memory</div>';
+            }
+        }
+
+        // Status
+        async function loadStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                
+                if (data.model) {
+                    document.getElementById('status-model').textContent = data.model;
+                }
+                if (data.context) {
+                    document.getElementById('status-context').textContent = data.context;
+                }
+                if (data.tokens) {
+                    document.getElementById('status-tokens').textContent = data.tokens;
+                }
+                if (data.runtime) {
+                    document.getElementById('status-runtime').textContent = data.runtime;
+                }
+            } catch (e) {
+                console.error('Failed to load status:', e);
+            }
+        }
+
+        // Config
+        async function loadConfig() {
+            try {
+                const res = await fetch('/api/config');
+                const data = await res.json();
+                const container = document.getElementById('config-content');
+                
+                if (data && Object.keys(data).length > 0) {
+                    container.innerHTML = Object.entries(data).map(([key, value]) => `
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-400">${escapeHtml(key)}</span>
+                            <span class="text-white font-mono">${typeof value === 'object' ? JSON.stringify(value).substring(0, 50) + '...' : String(value).substring(0, 50)}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div class="text-slate-400">No config available</div>';
+                }
+            } catch (e) {
+                document.getElementById('config-content').innerHTML = '<div class="text-red-400">Failed to load config</div>';
+            }
+        }
+
+        // Fetch model info dynamically
+        async function fetchModelInfo() {
+            try {
+                const statusRes = await fetch('/api/status');
+                const statusData = await statusRes.json();
+                const modelEl = document.getElementById('model-badge');
+                if (statusData.model) {
+                    modelEl.textContent = statusData.model;
+                    modelEl.classList.remove('hidden');
+                }
+            } catch (e) {
+                console.error('Failed to fetch model info:', e);
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize
+        updateSystemInfo();
+        setInterval(updateSystemInfo, 5000);
+        loadActivities();
+    </script>
+</body>
+</html>

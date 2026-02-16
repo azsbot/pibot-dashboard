@@ -1,0 +1,14 @@
+[Unit]
+Description=PiBot Website
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/soikat/clawd/website
+ExecStart=/usr/bin/node /home/soikat/clawd/website/server.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
